@@ -94,25 +94,21 @@ def next_batch(x, y, batch_size, pnyw2id, han_w2id):
         yield dict(x=input_batch, y=label_batch)
 
 
-def load_data(train=True):
+def load_data():
     # 加载数据集
     train_path = 'data/train.tsv'
     dev_path = 'data/dev.tsv'
-    test_path = 'data/test.tsv'
     train_pny_list, train_han_list = read_file(train_path)
+    dev_pny_list, dev_han_list = read_file(dev_path)
+
     pny_dict_w2id, pny_dict_id2w = mk_lm_pny_vocab(train_pny_list)
     han_dict_w2id, han_dict_id2w = mk_lm_han_vocab(train_han_list)
 
-    dev_pny_list, dev_han_list = read_file(dev_path)
+    return train_pny_list, train_han_list, dev_pny_list, dev_han_list, pny_dict_w2id, han_dict_w2id
 
+
+def load_test_data():
+    test_path = 'data/test.tsv'
     test_pny_list, test_han_list = read_file(test_path)
-    # train_inputs, train_labels = process_file(train_path, pny_dict_w2id, han_dict_w2id,
-    #                                           max_len)
-    # eval_inputs, eval_labels = process_file(dev_path, pny_dict_w2id, han_dict_w2id,
-    #                                         max_len)
-    vocab_size = len(pny_dict_w2id)
-    label_size = len(han_dict_w2id)
-    if train:
-        return train_pny_list, train_han_list, vocab_size, label_size, dev_pny_list, dev_han_list, pny_dict_w2id, han_dict_w2id
-    else:
-        return test_pny_list, test_han_list
+
+    return test_pny_list, test_han_list

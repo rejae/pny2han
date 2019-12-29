@@ -5,11 +5,8 @@ import tensorflow as tf
 import numpy as np
 import sys
 import json
-from data_loader import load_data
+from data_loader import load_test_data
 sys.path.append('../')
-from utils import decode_ctc, GetEditDistance
-
-from utils import get_data, data_hparams
 from collections import defaultdict
 import warnings
 
@@ -17,17 +14,30 @@ warnings.filterwarnings('ignore')
 
 # 0.准备解码所需字典，参数需和训练一致，也可以将字典保存到本地，直接进行读取
 
-def defaultdict_from_dict(d):
-    nd = lambda: defaultdict(int)
-    ni = nd()
-    ni.update(d)
-    return ni
-test_pny_list, test_han_list = load_data(False)
+# word error rate------------------------------------
+def GetEditDistance(str1, str2):
+    leven_cost = 0
+    s = difflib.SequenceMatcher(None, str1, str2)
+    for tag, i1, i2, j1, j2 in s.get_opcodes():
+        if tag == 'replace':
+            leven_cost += max(i2 - i1, j2 - j1)
+        elif tag == 'insert':
+            leven_cost += (j2 - j1)
+        elif tag == 'delete':
+            leven_cost += (i2 - i1)
+    return leven_cost
+
+def defaultdict_from_dict(dic):
+    dd = defaultdict(int)
+    dd.update(dic)
+    return dd
+
+test_pny_list, test_han_list = load_test_data()
 # 1.声学模型-----------------------------------
 
 
 # 2.语言模型-------------------------------------------拿到两个vocab的大小，来恢复模型，但是又重建了vocab，很浪费资源，所以需要保存下来
-from model_language.transformer import Lm, lm_hparams
+from transformer import Lm, lm_hparams
 
 with open('vocab/pny_vocab.json', "r", encoding='utf-8') as f:
     pny_dict_w2id = json.load(f)
@@ -82,12 +92,15 @@ for i in range(len(test_pny_list)):
             preds = sess.run(lm.preds, {lm.x: pny_id})
             #preds_reshape = np.reshape(preds, [1, -1])
             preds_list = preds.tolist()[0]
-            print(preds_list)
+
 
             result = ''.join([han_dict_id2w[idx] for idx in preds_list])
             label = test_han_list[i]
+            print('原文汉字id:', ', '.join([str(han_dict_w2id[w]) for w in test_han_list[i]]))
             print('原文汉字：', test_han_list[i])
-            print('识别结果：', result)
+
+            print("识别结果id:", preds_list)
+            print('识别结果汉字：：', result)
             distance = GetEditDistance(label, result)
             word_error_num += distance
             word_num += len(label)

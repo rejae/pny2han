@@ -50,12 +50,12 @@ with tf.Session(graph=lm.graph) as sess:
     sess.run(tf.global_variables_initializer())
     add_num = 0
 
-    if os.path.exists('logs_lm/checkpoint'):
+    if os.path.exists('logs_lm_improve/checkpoint'):
         print('loading language model...')
-        latest = tf.train.latest_checkpoint('logs_lm')
+        latest = tf.train.latest_checkpoint('logs_lm_improve')
         add_num = int(latest.split('_')[-1])
         saver.restore(sess, latest)
-    writer = tf.summary.FileWriter('logs_lm/tensorboard', tf.get_default_graph())
+    writer = tf.summary.FileWriter('logs_lm_improve/tensorboard', tf.get_default_graph())
 
     print('enter epoch training')
     for epoch in range(epochs):

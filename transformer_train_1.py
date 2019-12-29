@@ -1,59 +1,20 @@
 import os
 import tensorflow as tf
-from data_loader import read_file, mk_lm_han_vocab, mk_lm_pny_vocab, next_batch, load_data
-from utils import get_data, data_hparams
-
+from data_loader import next_batch, load_data
 import warnings
-
+from transformer import Lm, lm_hparams
 warnings.filterwarnings('ignore')
 
+train_inputs, train_labels, eval_inputs, eval_labels, pny_dict_w2id, han_dict_w2id = load_data()
 
-# def load_data(train=True):
-#     # 加载数据集
-#     train_path = 'data/train.tsv'
-#     dev_path = 'data/dev.tsv'
-#     test_path = 'data/test.tsv'
-#     train_pny_list, train_han_list = read_file(train_path)
-#     pny_dict_w2id, pny_dict_id2w = mk_lm_pny_vocab(train_pny_list)
-#     han_dict_w2id, han_dict_id2w = mk_lm_han_vocab(train_han_list)
-#
-#     dev_pny_list, dev_han_list = read_file(dev_path)
-#
-#     dev_pny_list, dev_han_list = read_file(test_path)
-#     # train_inputs, train_labels = process_file(train_path, pny_dict_w2id, han_dict_w2id,
-#     #                                           max_len)
-#     # eval_inputs, eval_labels = process_file(dev_path, pny_dict_w2id, han_dict_w2id,
-#     #                                         max_len)
-#     vocab_size = len(pny_dict_w2id)
-#     label_size = len(han_dict_w2id)
-#     if train:
-#         return train_pny_list, train_han_list, vocab_size, label_size, dev_pny_list, dev_han_list, pny_dict_w2id, han_dict_w2id
-#     else:
-#         return dev_pny_list, dev_han_list
-
-
-# 0.准备训练所需数据----data_hparams 参数修改--------------------------
-# data_args = data_hparams()
-# data_args.data_type = 'train'
-# train_data = get_data(data_args)
-#
-# # 0.准备验证所需数据  data_hparams   ------------------------------
-# data_args = data_hparams()
-# data_args.data_type = 'dev'
-# dev_data = get_data(data_args)
-
-# 1.声学模型训练-----------------------------------
-
-# 2.语言模型训练-------------------------------------------
-from transformer import Lm, lm_hparams
-
-train_inputs, train_labels, input_vb_size, label_vb_size, eval_inputs, eval_labels, pny_dict_w2id, han_dict_w2id = load_data()
+input_vb_size = len(pny_dict_w2id)
+label_vb_size = len(han_dict_w2id)
 
 lm_args = lm_hparams(input_vb_size, label_vb_size)
 lm = Lm(lm_args)
 
 batch_num = len(train_inputs) // lm_args.batch_size
-epochs = 1
+epochs = 5
 
 with lm.graph.as_default():
     saver = tf.train.Saver()
