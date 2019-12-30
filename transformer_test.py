@@ -6,11 +6,12 @@ import numpy as np
 import sys
 import json
 from data_loader import load_test_data
-sys.path.append('../')
 from collections import defaultdict
 import warnings
+from transformer import Lm, lm_hparams
 
 warnings.filterwarnings('ignore')
+
 
 # 0.准备解码所需字典，参数需和训练一致，也可以将字典保存到本地，直接进行读取
 
@@ -27,17 +28,20 @@ def GetEditDistance(str1, str2):
             leven_cost += (i2 - i1)
     return leven_cost
 
+
 def defaultdict_from_dict(dic):
     dd = defaultdict(int)
     dd.update(dic)
     return dd
 
+
+#  加载数据
 test_pny_list, test_han_list = load_test_data()
+
 # 1.声学模型-----------------------------------
 
 
 # 2.语言模型-------------------------------------------拿到两个vocab的大小，来恢复模型，但是又重建了vocab，很浪费资源，所以需要保存下来
-from transformer import Lm, lm_hparams
 
 with open('vocab/pny_vocab.json', "r", encoding='utf-8') as f:
     pny_dict_w2id = json.load(f)
@@ -62,8 +66,6 @@ with sess.as_default():
     latest = tf.train.latest_checkpoint('./logs_lm')
     saver.restore(sess, latest)
 
-# 3. 准备测试所需数据，通过设置data_args.data_type测试，
-
 # 4. 进行测试-------------------------------------------
 word_num = 0
 word_error_num = 0
@@ -74,38 +76,25 @@ for i in range(len(test_pny_list)):
     pny_id = [pny_dict_w2id[word] for word in test_pny_list[i]]
     han_id = [han_dict_w2id[word] for word in test_han_list[i]]
 
-    # 默认vocab list 缺词报错，所以构建defaultdict，OOV使用[PAD]即id=0来代替
-    # han__id = []
-    # for sentence in test_data.han_lst:
-    #
-    #     for han in sentence:
-    #         try:
-    #             han__id.append(train_data.han_vocab.index(han))
-    #         except Exception as e:
-    #             print('not in list error:', e)
-    #             continue
-
     with sess.as_default():
 
-        try:
-            pny_id = np.array(pny_id).reshape(1, -1)
-            preds = sess.run(lm.preds, {lm.x: pny_id})
-            #preds_reshape = np.reshape(preds, [1, -1])
-            preds_list = preds.tolist()[0]
+
+        pny_id = np.array(pny_id).reshape(1, -1)
+        preds = sess.run(lm.preds, {lm.x: pny_id})
+        # preds_reshape = np.reshape(preds, [1, -1])
+        preds_list = preds.tolist()[0]
+
+        result = ''.join([han_dict_id2w[idx] for idx in preds_list])
+        label = test_han_list[i]
+        print('原文汉字id:', ', '.join([str(han_dict_w2id[w]) for w in test_han_list[i]]))
+        print('原文汉字：', test_han_list[i])
+
+        print("识别结果id:", preds_list)
+        print('识别结果汉字：：', result)
+        distance = GetEditDistance(label, result)
+        word_error_num += distance
+        word_num += len(label)
 
 
-            result = ''.join([han_dict_id2w[idx] for idx in preds_list])
-            label = test_han_list[i]
-            print('原文汉字id:', ', '.join([str(han_dict_w2id[w]) for w in test_han_list[i]]))
-            print('原文汉字：', test_han_list[i])
-
-            print("识别结果id:", preds_list)
-            print('识别结果汉字：：', result)
-            distance = GetEditDistance(label, result)
-            word_error_num += distance
-            word_num += len(label)
-
-        except Exception as e:
-            print(e)
 print('词错误率：', word_error_num / word_num)
 sess.close()
