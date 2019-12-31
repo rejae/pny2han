@@ -78,7 +78,6 @@ for i in range(len(test_pny_list)):
 
     with sess.as_default():
 
-
         pny_id = np.array(pny_id).reshape(1, -1)
         preds = sess.run(lm.preds, {lm.x: pny_id})
         # preds_reshape = np.reshape(preds, [1, -1])

@@ -2,10 +2,10 @@ import tensorflow as tf
 import numpy as np
 
 
-def normalize(inputs,
-              epsilon=1e-8,
-              scope="ln",
-              reuse=None):
+def layer_normalize(inputs,
+                    epsilon=1e-8,
+                    scope="ln",
+                    reuse=None):
     with tf.variable_scope(scope, reuse=reuse):
         inputs_shape = inputs.get_shape()
         params_shape = inputs_shape[-1:]
@@ -112,7 +112,7 @@ def multihead_attention(emb,
         outputs += queries
 
         # Normalize
-        outputs = normalize(outputs)  # (N, T_q, C)
+        outputs = layer_normalize(outputs)  # (N, T_q, C)
 
     return outputs
 
@@ -149,7 +149,7 @@ def feedforward(inputs,
         outputs += inputs
 
         # Normalize
-        outputs = normalize(outputs)
+        outputs = layer_normalize(outputs)
 
     return outputs
 
@@ -169,21 +169,16 @@ def _position_embedding(inputs, max_length, hidden_units):
     sequence_length = max_length
     embedding_size = hidden_units
 
-    # 生成位置的索引，并扩张到batch中所有的样本上
     position_index = tf.tile(tf.expand_dims(tf.range(tf.shape(inputs)[1]), 0), [batch_size, 1])
-    # 根据正弦和余弦函数来获得每个位置上的embedding的第一部分
     position_embedding = np.array([[pos / np.power(10000, (i - i % 2) / embedding_size)
                                     for i in range(embedding_size)]
                                    for pos in range(sequence_length)])
 
-    # 然后根据奇偶性分别用sin和cos函数来包装
     position_embedding[:, 0::2] = np.sin(position_embedding[:, 0::2])
     position_embedding[:, 1::2] = np.cos(position_embedding[:, 1::2])
 
-    # 将positionEmbedding转换成tensor的格式
     position_embedding = tf.cast(position_embedding, dtype=tf.float32)
 
-    # 得到三维的矩阵[batchSize, sequenceLen, embeddingSize]
     embedded_position = tf.nn.embedding_lookup(position_embedding, position_index)
 
     return embedded_position
