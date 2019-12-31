@@ -41,7 +41,7 @@ test_pny_list, test_han_list = load_test_data()
 # 1.声学模型-----------------------------------
 
 
-# 2.语言模型-------------------------------------------拿到两个vocab的大小，来恢复模型，但是又重建了vocab，很浪费资源，所以需要保存下来
+# 2.语言模型-------------------------------------------
 
 with open('vocab/pny_vocab.json', "r", encoding='utf-8') as f:
     pny_dict_w2id = json.load(f)
@@ -80,7 +80,6 @@ for i in range(len(test_pny_list)):
 
         pny_id = np.array(pny_id).reshape(1, -1)
         preds = sess.run(lm.preds, {lm.x: pny_id})
-        # preds_reshape = np.reshape(preds, [1, -1])
         preds_list = preds.tolist()[0]
 
         result = ''.join([han_dict_id2w[idx] for idx in preds_list])

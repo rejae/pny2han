@@ -5,7 +5,7 @@ import warnings
 from transformer import Lm, lm_hparams
 warnings.filterwarnings('ignore')
 
-train_inputs, train_labels, eval_inputs, eval_labels, pny_dict_w2id, han_dict_w2id = load_data()
+train_inputs, train_labels, pny_dict_w2id, han_dict_w2id = load_data()
 
 input_vb_size = len(pny_dict_w2id)
 label_vb_size = len(han_dict_w2id)
@@ -50,22 +50,6 @@ with tf.Session(graph=lm.graph) as sess:
 
             if i % 300 == 0:
                 print('acc=', sum(total_acc[-100:]) / 100, 'cost=', sum(total_loss[-100:]) / 100)
-                ## evaluate
-                eval_total_acc = []
-                eval_total_loss = []
-                j = 0
-                for batch in next_batch(eval_inputs, eval_labels, lm_args.batch_size, pny_dict_w2id, han_dict_w2id):
-
-                    input_batch, label_batch = batch['x'], batch['y']
-                    feed = {lm.x: input_batch, lm.y: label_batch}
-                    acc, cost, _ = sess.run([lm.acc, lm.mean_loss, lm.train_op], feed_dict=feed)
-                    eval_total_acc.append(acc)
-                    eval_total_loss.append(cost)
-                    j = j + 1
-                    if j == 100:
-                        print('eval_total_acc:', sum(eval_total_acc) / (len(eval_total_acc)), 'eval_total_loss:',
-                              sum(eval_total_loss) / (len(eval_total_loss)))
-                        break
 
             if (epoch * batch_num + i) % 10 == 0:
                 rs = sess.run(merged, feed_dict=feed)
